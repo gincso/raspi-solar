@@ -5,30 +5,14 @@ exposed to **Home Assistant** over the network.
 
 ## Overview
 
-```
-[Raspberry Pi 5]
-  │
-  ├─ USB ← SunGoldPower 10kW Hybrid Inverter (modbus/serial)
-  │
-  ├─ [sungoldpower.py]  parses inverter data over USB serial
-  │
-  ├─ [ha_bridge.py]      publishes data to Home Assistant via MQTT
-  │
-  └─ [homeassistant/]   YAML configs + MQTT entities
-```
-
-The Pi reads the inverter's USB serial stream, decodes the SunGoldPower
-modbus-like register map, and publishes every value as an MQTT topic so
-Home Assistant can display it on dashboards remotely.
+This project monitors a SunGoldPower 10kW hybrid inverter via USB serial (Modbus RTU) and publishes all measurements to Home Assistant via MQTT.
 
 ## Features
 
-- Reads SunGoldPower 10kW hybrid inverter over USB (CP210x/CH340 USB-UART adapter)
-- Decodes battery voltage, PV voltage/current/power, grid voltage/current/power,
-  load power, inverter temp, fault codes, and daily energy totals
-- Publishes to Home Assistant via MQTT with auto-discovery
-- Runs as a systemd service, survives reboots, auto-restarts
-- Optional: push notifications on fault / low battery via HA automation
+- Reads SunGoldPower inverter data over USB serial (9600 baud, Modbus RTU)
+- Publishes battery voltage, PV power, grid power, inverter temperature, fault codes, and energy totals
+- Integrates with Home Assistant via MQTT auto-discovery
+- Runs as a systemd service for reliable operation
 
 ## Requirements
 
@@ -36,68 +20,91 @@ Home Assistant can display it on dashboards remotely.
 - SunGoldPower 10kW hybrid inverter with USB serial port (or USB-UART adapter)
 - Home Assistant with MQTT integration (Hass.io / Home Assistant OS / standalone)
 
-## Quick start
+## Quick Start
 
-```bash
-# On the Raspberry Pi 5
-git clone https://github.com/<your-user>/raspi-solar.git
-cd raspi-solar
-./setup.sh
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/gincso/raspi-solar.git
+   cd raspi-solar
+   ```
 
-`setup.sh` installs python deps, copies the service, and enables it:
+2. **Setup**
+   ```bash
+   ./setup.sh
+   ```
+   This installs Python dependencies (paho-mqtt, pyserial), copies the service and config files, and enables the systemd service.
 
-```bash
-sudo systemctl enable --now raspi-solar.service
-sudo systemctl status raspi-solar.service
-```
+3. **Start the service**
+   ```bash
+   sudo systemctl start raspi-solar
+   sudo systemctl enable raspi-solar
+   ```
 
-Then in Home Assistant:
-
-1. Add the **MQTT** integration
-2. Entities auto-discover (no YAML needed), or copy `homeassistant/solar.yaml` into
-   your `configuration.yaml` / `packages/` folder
+4. **Verify Home Assistant MQTT connectivity**
+   ```bash
+   # Check if MQTT broker is reachable
+   nc -z gincso:raspi-solar 1883
+   
+   # Verify Home Assistant discovers topics
+   mosquitto_sub -t 'home/solar/#' -v
+   ```
 
 ## Configuration
 
-Edit `config/config.yaml`:
+Edit `config/config.yaml` to adjust:
+
+- **inverter** – Port, baud rate, slave ID, poll interval
+- **mqtt** – Broker host, port, username/password (optional), topic prefix
+
+Example `config.yaml`:
 
 ```yaml
 inverter:
-  port: /dev/ttyUSB0        # USB serial device
+  port: /dev/ttyUSB0
   baudrate: 9600
-  slave_id: 1               # inverter modbus slave id
-  poll_interval: 5          # seconds
+  slave_id: 1
+  poll_interval: 5
 
 mqtt:
-  host: 192.168.1.10        # Home Assistant / MQTT broker host
+  host: gincso:raspi-solar
   port: 1883
   username: ""
   password: ""
   topic_prefix: home/solar
 ```
 
-## Dashboard entities
+## Home Assistant Integration
 
-| Entity | Unit | Description |
-| --- | --- | --- |
-| `solar.battery_voltage` | V | Battery voltage |
-| `solar.battery_power` | W | Battery charge/discharge power |
-| `solar.pv_voltage` | V | PV array voltage |
-| `solar.pv_current` | A | PV array current |
-| `solar.pv_power` | W | PV array power |
-| `solar.grid_voltage` | V | Grid voltage |
-| `solar.grid_power` | W | Grid import/export power |
-| `solar.load_power` | W | Load power |
-| `solar.inverter_temp` | °C | Inverter temperature |
-| `solar.fault_code` | — | Active fault code |
-| `solar.energy_today` | kWh | Energy generated today |
+The project publishes to these MQTT topics (auto-discovered by Home Assistant):
 
-## Docs
+| Topic | Entity Type | Description |
+|-------|-------------|-------------|
+| `home/solar/battery_voltage/state` | sensor | Battery voltage (V) |
+| `home/solar/battery_power/state` | sensor | Battery power (W) |
+| `home/solar/pv_voltage/state` | sensor | PV array voltage (V) |
+| `home/solar/pv_current/state` | sensor | PV array current (A) |
+| `home/solar/pv_power/state` | sensor | PV array power (W) |
+| `home/solar/grid_voltage/state` | sensor | Grid voltage (V) |
+| `home/solar/grid_power/state` | sensor | Grid power (W) |
+| `home/solar/load_power/state` | sensor | Load power (W) |
+| `home/solar/inverter_temp/state` | sensor | Inverter temperature (°C) |
+| `home/solar/fault_code/state` | boolean | Active fault flag |
+| `home/solar/energy_today/state` | float | Today's energy generation (kWh) |
 
-- `docs/registers.md` — SunGoldPower register map
-- `docs/troubleshooting.md` — common USB / modbus issues
+## Troubleshooting
 
-## License
+- **MQTT not connecting** – Verify Home Assistant MQTT integration is enabled
+- **No topics discovered** – Check `config.yaml` MQTT settings and network connectivity
+- **Service won't start** – Run `sudo systemctl status raspi-solar`
 
-MIT — see `LICENSE`.
+## Files
+
+- `sungoldpower.py` – Reads inverter data via Modbus RTU
+- `ha_bridge.py` – Publishes data to Home Assistant MQTT
+- `raspi-solar.service` – systemd service definition
+- `config/config.yaml` – Configuration for inverter and MQTT
+- `homeassistant/solar.yaml` – Home Assistant MQTT entity configuration
+- `docs/registers.md` – SunGoldPower register map
+- `docs/troubleshooting.md` – Common issues and solutions
+- `scripts/verify_ha_mqtt.py` – Script to verify HA MQTT connectivity
+
