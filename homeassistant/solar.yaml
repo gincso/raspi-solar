@@ -1,0 +1,10 @@
+# Home Assistant MQTT auto-discovery config for solar monitoring
+# Entities are auto-discovered via ha_bridge.py publishing discovery messages.
+# If you prefer manual YAML, add:
+# mqtt:
+#   sensor:
+#     - name: "Solar Battery Voltage"
+#       unique_id: "raspi_solar_battery_voltage"
+#       state_topic: "home/solar/battery_voltage/state"
+#       unit_of_measurement: "V"
+#       device_class: "voltage"

@@ -1,0 +1,12 @@
+inverter:
+  port: /dev/ttyUSB0
+  baudrate: 9600
+  slave_id: 1
+  poll_interval: 5
+
+mqtt:
+  host: 192.168.1.10
+  port: 1883
+  username: ""
+  password: ""
+  topic_prefix: home/solar
