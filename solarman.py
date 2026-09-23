@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-solarman.py — SolarMan WiFi integration for SunGoldPower inverters
-===================================================================
+solarman.py — SolarMan Business Server Integration for SunGoldPower Inverters
+=============================================================================
 
-This module communicates with SunGoldPower hybrid inverters that are
-connected via a WiFi dongle (SolarMan protocol). It is an alternative
-to the direct USB Modbus RTU connection.
+This module connects to SolarMan's business servers (cloud platform) to
+retrieve real-time data from SunGoldPower hybrid inverters.
 
-Connection: WiFi dongle connected to inverter, provides TCP/IP endpoint
-Protocol:   SolarMan proprietary protocol (over TCP/IP)
+Connection: WiFi dongle → SolarMan cloud → API endpoints
+Protocol:   SolarMan Business Server API (REST over HTTPS)
 """
 
 import argparse
 import json
 import logging
+import requests
 import socket
 import struct
 import time
@@ -21,6 +21,16 @@ import yaml
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# SolarMan Business Server Configuration
+# ---------------------------------------------------------------------------
+
+SOLARMAN_API_BASE = "https://api.solarman.cn"
+SOLARMAN_LOGIN_URL = f"{SOLARMAN_API_BASE}/api/v1/login"
+SOLARMAN_DEVICES_URL = f"{SOLARMAN_API_BASE}/api/v1/devices"
+SOLARMAN_DATA_URL = f"{SOLARMAN_API_BASE}/api/v1/devices"
 
 
 def crc16(data):
@@ -72,6 +82,57 @@ def read_registers(host, port, address, function, start_addr, qty, timeout=5):
         return None
     finally:
         sock.close()
+
+
+# ---------------------------------------------------------------------------
+# SolarMan Business Server API
+# ---------------------------------------------------------------------------
+
+class SolarManAPI:
+    """SolarMan Business Server API client."""
+
+    def __init__(self, username, password, base_url=SOLARMAN_API_BASE):
+        self.username = username
+        self.password = password
+        self.base_url = base_url
+        self.token = None
+        self.session = requests.Session()
+
+    def login(self):
+        """Authenticate with SolarMan business server."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/v1/login",
+                json={"username": self.username, "password": self.password},
+                timeout=10
+            )
+            if response.status_code == 200:
+                self.token = response.json().get("token")
+                self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+                logging.info("SolarMan authentication successful")
+                return True
+            else:
+                logging.error("SolarMan login failed: %s", response.status_code)
+                return False
+        except Exception as e:
+            logging.error("SolarMan login error: %s", e)
+            return False
+
+    def get_devices(self):
+        """Get registered devices from SolarMan."""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/api/v1/devices",
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json().get("devices", [])
+            else:
+                logging.error("SolarMan devices query failed: %s", response.status_code)
+                return []
+        except Exception as e:
+            logging.error("SolarMan devices error: %s", e)
+            return []
 
 
 # ---------------------------------------------------------------------------
