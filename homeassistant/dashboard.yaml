@@ -1,0 +1,196 @@
+# Solar Dashboard for Home Assistant
+# Add this to your Lovelace dashboard configuration
+# Or copy individual cards to your existing dashboard
+
+title: "Solar Monitoring"
+icon: "mdi:solar-power"
+views:
+  - title: "Overview"
+    icon: "mdi:home-lightning-bolt"
+    cards:
+      # Header card with system status
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.solar_battery_voltage
+            name: "Battery"
+            icon: "mdi:battery"
+          - type: entity
+            entity: sensor.solar_pv_power
+            name: "PV Power"
+            icon: "mdi:solar-panel"
+          - type: entity
+            entity: sensor.solar_grid_power
+            name: "Grid"
+            icon: "mdi:transmission-tower"
+          - type: entity
+            entity: sensor.solar_load_power
+            name: "Load"
+            icon: "mdi:home"
+
+      # Power flow visualization
+      - type: custom:power-flow-card
+        title: "Power Flow"
+        entities:
+          solar: sensor.solar_pv_power
+          battery: sensor.solar_battery_power
+          grid: sensor.solar_grid_power
+          load: sensor.solar_load_power
+
+      # Battery status
+      - type: entities
+        title: "Battery Status"
+        entities:
+          - entity: sensor.solar_battery_voltage
+            name: "Voltage"
+            icon: "mdi:battery"
+          - entity: sensor.solar_battery_power
+            name: "Charge/Discharge Power"
+            icon: "mdi:battery-charging"
+          - entity: sensor.solar_battery_current
+            name: "Current"
+            icon: "mdi:current-dc"
+          - entity: sensor.solar_battery_temp
+            name: "Temperature"
+            icon: "mdi:thermometer"
+
+      # PV Array
+      - type: entities
+        title: "PV Array"
+        entities:
+          - entity: sensor.solar_pv_voltage
+            name: "Voltage"
+            icon: "mdi:solar-panel"
+          - entity: sensor.solar_pv_current
+            name: "Current"
+            icon: "mdi:current-dc"
+          - entity: sensor.solar_pv_power
+            name: "Power"
+            icon: "mdi:solar-power"
+
+      # Grid
+      - type: entities
+        title: "Grid"
+        entities:
+          - entity: sensor.solar_grid_voltage
+            name: "Voltage"
+            icon: "mdi:transmission-tower"
+          - entity: sensor.solar_grid_power
+            name: "Power"
+            icon: "mdi:transmission-tower"
+          - entity: sensor.solar_grid_current
+            name: "Current"
+            icon: "mdi:current-ac"
+
+      # Energy totals
+      - type: entities
+        title: "Energy"
+        entities:
+          - entity: sensor.solar_energy_today
+            name: "Today"
+            icon: "mdi:calendar-today"
+          - entity: sensor.solar_energy_total
+            name: "Total"
+            icon: "mdi:counter"
+
+      # Inverter status
+      - type: entities
+        title: "Inverter"
+        entities:
+          - entity: sensor.solar_inverter_temp
+            name: "Temperature"
+            icon: "mdi:thermometer"
+          - entity: sensor.solar_fault_code
+            name: "Fault Code"
+            icon: "mdi:alert"
+
+  - title: "Charts"
+    icon: "mdi:chart-line"
+    cards:
+      # Power over time
+      - type: custom:apexcharts-card
+        title: "Power (Last 24h)"
+        span:
+          start: day
+        series:
+          - entity: sensor.solar_pv_power
+            name: "PV Power"
+            type: area
+            color: "#f9c74f"
+          - entity: sensor.solar_battery_power
+            name: "Battery Power"
+            type: area
+            color: "#90be6d"
+          - entity: sensor.solar_grid_power
+            name: "Grid Power"
+            type: area
+            color: "#f9844a"
+          - entity: sensor.solar_load_power
+            name: "Load"
+            type: line
+            color: "#577590"
+        yaxis:
+          - id: "power"
+            min: 0
+            max: 12000
+            decimals: 0
+            unit: "W"
+        experimental:
+          color_threshold:
+            - value: 0
+              color: "#f94144"
+
+      # Battery voltage
+      - type: custom:apexcharts-card
+        title: "Battery Voltage (Last 24h)"
+        span:
+          start: day
+        series:
+          - entity: sensor.solar_battery_voltage
+            name: "Voltage"
+            type: line
+            color: "#4361ee"
+        yaxis:
+          - id: "voltage"
+            min: 40
+            max: 60
+            decimals: 1
+            unit: "V"
+
+      # Energy today
+      - type: custom:apexcharts-card
+        title: "Energy Generation (Last 7 days)"
+        span:
+          start: week
+        series:
+          - entity: sensor.solar_energy_today
+            name: "Daily Energy"
+            type: column
+            color: "#f9c74f"
+        yaxis:
+          - id: "energy"
+            min: 0
+            max: 50
+            decimals: 1
+            unit: "kWh"
+
+  - title: "Details"
+    icon: "mdi:information-outline"
+    cards:
+      - type: entities
+        title: "All Sensors"
+        entities:
+          - sensor.solar_battery_voltage
+          - sensor.solar_battery_current
+          - sensor.solar_battery_power
+          - sensor.solar_pv_voltage
+          - sensor.solar_pv_current
+          - sensor.solar_pv_power
+          - sensor.solar_grid_voltage
+          - sensor.solar_grid_current
+          - sensor.solar_grid_power
+          - sensor.solar_load_power
+          - sensor.solar_inverter_temp
+          - sensor.solar_fault_code
+          - sensor.solar_energy_today
+          - sensor.solar_energy_total

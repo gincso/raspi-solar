@@ -1,0 +1,187 @@
+# Simple Solar Dashboard for Home Assistant
+# Works with default Home Assistant installation (no custom cards needed)
+
+title: "Solar Monitoring"
+icon: "mdi:solar-power"
+views:
+  - title: "Overview"
+    icon: "mdi:home-lightning-bolt"
+    cards:
+      # Top row - key metrics
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            entity: sensor.solar_pv_power
+            name: "PV Power"
+            min: 0
+            max: 12000
+            severity:
+              - value: 8000
+                color: "green"
+              - value: 4000
+                color: "yellow"
+              - value: 0
+                color: "red"
+          - type: gauge
+            entity: sensor.solar_battery_power
+            name: "Battery Power"
+            min: -6000
+            max: 6000
+            severity:
+              - value: -4000
+                color: "red"    # discharging
+              - value: 0
+                color: "yellow"
+              - value: 4000
+                color: "green"  # charging
+          - type: gauge
+            entity: sensor.solar_load_power
+            name: "Load"
+            min: 0
+            max: 12000
+            severity:
+              - value: 8000
+                color: "green"
+              - value: 4000
+                color: "yellow"
+              - value: 0
+                color: "red"
+
+      # Second row - voltages
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.solar_battery_voltage
+            name: "Battery Voltage"
+            icon: "mdi:battery"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_pv_voltage
+            name: "PV Voltage"
+            icon: "mdi:solar-panel"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_grid_voltage
+            name: "Grid Voltage"
+            icon: "mdi:transmission-tower"
+            secondary_info: last-changed
+
+      # Third row - currents
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.solar_battery_current
+            name: "Battery Current"
+            icon: "mdi:current-dc"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_pv_current
+            name: "PV Current"
+            icon: "mdi:current-dc"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_grid_current
+            name: "Grid Current"
+            icon: "mdi:current-ac"
+            secondary_info: last-changed
+
+      # Fourth row - energy and temperature
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.solar_energy_today
+            name: "Today's Energy"
+            icon: "mdi:calendar-today"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_inverter_temp
+            name: "Inverter Temp"
+            icon: "mdi:thermometer"
+            secondary_info: last-changed
+          - type: entity
+            entity: sensor.solar_fault_code
+            name: "Fault Code"
+            icon: "mdi:alert"
+            secondary_info: last-changed
+
+      # Energy gauge
+      - type: gauge
+        entity: sensor.solar_energy_today
+        name: "Energy Today"
+        min: 0
+        max: 50
+        unit: "kWh"
+        severity:
+          - value: 30
+            color: "green"
+          - value: 15
+            color: "yellow"
+          - value: 0
+            color: "red"
+
+  - title: "Details"
+    icon: "mdi:information-outline"
+    cards:
+      - type: entities
+        title: "Sensor Details"
+        show_header_toggle: false
+        entities:
+          - entity: sensor.solar_battery_voltage
+            name: "Battery Voltage"
+          - entity: sensor.solar_battery_current
+            name: "Battery Current"
+          - entity: sensor.solar_battery_power
+            name: "Battery Power"
+          - entity: sensor.solar_pv_voltage
+            name: "PV Voltage"
+          - entity: sensor.solar_pv_current
+            name: "PV Current"
+          - entity: sensor.solar_pv_power
+            name: "PV Power"
+          - entity: sensor.solar_grid_voltage
+            name: "Grid Voltage"
+          - entity: sensor.solar_grid_current
+            name: "Grid Current"
+          - entity: sensor.solar_grid_power
+            name: "Grid Power"
+          - entity: sensor.solar_load_power
+            name: "Load Power"
+          - entity: sensor.solar_inverter_temp
+            name: "Inverter Temperature"
+          - entity: sensor.solar_fault_code
+            name: "Fault Code"
+          - entity: sensor.solar_energy_today
+            name: "Energy Today"
+          - entity: sensor.solar_energy_total
+            name: "Total Energy"
+
+      - type: history-graph
+        entities:
+          - entity: sensor.solar_pv_power
+            name: "PV Power"
+          - entity: sensor.solar_battery_power
+            name: "Battery Power"
+          - entity: sensor.solar_grid_power
+            name: "Grid Power"
+          - entity: sensor.solar_load_power
+            name: "Load Power"
+        hours_to_show: 24
+        refresh_interval: 60
+
+      - type: history-graph
+        entities:
+          - entity: sensor.solar_battery_voltage
+            name: "Battery Voltage"
+          - entity: sensor.solar_pv_voltage
+            name: "PV Voltage"
+          - entity: sensor.solar_grid_voltage
+            name: "Grid Voltage"
+        hours_to_show: 24
+        refresh_interval: 60
+
+      - type: history-graph
+        entities:
+          - entity: sensor.solar_energy_today
+            name: "Daily Energy"
+        hours_to_show: 168  # 7 days
+        refresh_interval: 300
